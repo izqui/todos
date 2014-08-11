@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/izqui/functional"
 	"github.com/skratchdot/open-golang/open"
 	"log"
 )
@@ -22,36 +23,48 @@ func main() {
 
 	} else {
 
-		mode := flag.Args()[0]
-		switch mode {
-		case "install":
+		if len(flag.Args()) < 1 {
+			showHelp()
+		} else {
 
-			f := OpenConfiguration(HOME_DIRECTORY_CONFIG)
-			defer f.File.Close()
+			mode := flag.Args()[0]
+			switch mode {
+			case "install":
 
-			// Check config file for github access token
-			if f.Config.GithubToken == "" {
+				f := OpenConfiguration(HOME_DIRECTORY_CONFIG)
+				defer f.File.Close()
 
-				fmt.Println("Paste Github access token:")
-				open.Run(TOKEN_URL)
-				var token string
-				fmt.Scanln(&token)
-				f.Config.GithubToken = token //TODO: Check if token is valid
-				f.WriteConfiguration()
+				// Check config file for github access token
+				if f.Config.GithubToken == "" {
+
+					fmt.Println("Paste Github access token:")
+					open.Run(TOKEN_URL)
+					var token string
+					fmt.Scanln(&token)
+					f.Config.GithubToken = token //TODO: Check if token is valid
+					f.WriteConfiguration()
+				}
+
+				// Set git "precommit" Hook
+
+			case "work":
+				diff, _ := GitDiffFiles()
+
+				diff = functional.Map(func(s string) string { return root + "/" + s }, diff).([]string)
+
+				fmt.Println("Files to check: ", diff)
+
+			default:
+				showHelp()
 			}
-
-			// Set Git Hook
-
-		case "work":
-			diff, err := GitDiffFiles()
-			fmt.Println(diff)
-
-		default:
-			fmt.Println("Unknown command")
 		}
 	}
 }
 
+func showHelp() {
+
+	fmt.Println("Unknown command") //TODO: Write help
+}
 func logOnError(err error) {
 
 	if err != nil {

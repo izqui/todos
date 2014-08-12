@@ -51,6 +51,7 @@ func OpenConfiguration(dir string) *ConfFile {
 
 func (conf *ConfFile) WriteConfiguration() {
 
+	conf.File.Seek(0, 0)
 	err := json.NewEncoder(conf.File).Encode(conf.Config)
 	logOnError(err)
 

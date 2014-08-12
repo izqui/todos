@@ -1,5 +1,6 @@
-package main // Inserted comment
+package main
 
+//TODO: test
 import (
 	"flag"
 	"fmt"
@@ -11,6 +12,11 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/izqui/functional"
+)
+
+var (
+	token = flag.String("token", "", "Github setup token")
+	reset = flag.Bool("reset", false, "Reset Github token")
 )
 
 func init() {
@@ -34,23 +40,28 @@ func main() {
 
 			mode := flag.Args()[0]
 			switch mode {
-			case "install":
+			case "setup":
 
 				f := OpenConfiguration(HOME_DIRECTORY_CONFIG)
 				defer f.File.Close()
 
 				// Check config file for github access token
-				if f.Config.GithubToken == "" {
+				if *token != "" {
+
+					f.Config.GithubToken = *token
+
+				} else if f.Config.GithubToken == "" || *reset {
 
 					fmt.Println("Paste Github access token:")
 					open.Run(TOKEN_URL)
-					var token string
-					fmt.Scanln(&token)
-					f.Config.GithubToken = token //TODO: Check if token is valid [Issue: https://github.com/izqui/todos/issues/5]
-					f.WriteConfiguration()
+					var scanToken string
+					fmt.Scanln(&scanToken)
+					f.Config.GithubToken = scanToken //TODO: Check if token is valid [Issue: https://github.com/izqui/todos/issues/5]
 				}
 
-				// Set git "precommit" Hook
+				f.WriteConfiguration()
+
+				setupHook(root + "/.git/hooks/pre-commit")
 
 			case "work":
 
@@ -106,7 +117,7 @@ func main() {
 						}
 
 						if changes {
-							logOnError(WriteFileLines(file, lines))
+							logOnError(WriteFileLines(file, lines, false))
 						}
 					}
 				}
@@ -116,6 +127,26 @@ func main() {
 			}
 		}
 	}
+}
+
+func setupHook(path string) {
+
+	bash := "#!/bin/bash"
+	script := "todos work"
+
+	lns, err := ReadFileLines(path)
+	logOnError(err)
+
+	if len(lns) == 0 {
+		lns = append(lns, bash)
+	}
+
+	//Filter existing script line
+	lns = functional.Filter(func(a string) bool { return a != script }, lns).([]string)
+	lns = append(lns, script)
+
+	logOnError(WriteFileLines(path, lns, true))
+
 }
 
 func showHelp() {

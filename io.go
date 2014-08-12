@@ -9,7 +9,7 @@ import (
 
 func ReadFileLines(path string) ([]string, error) {
 
-	f, err := os.Open(path)
+	f, err := os.OpenFile(path, os.O_CREATE, 0660)
 	defer f.Close()
 
 	if err != nil {
@@ -27,9 +27,16 @@ func ReadFileLines(path string) ([]string, error) {
 	return lines, sc.Err()
 }
 
-func WriteFileLines(path string, lines []string) error {
+func WriteFileLines(path string, lines []string, exec bool) error {
 
-	f, err := os.OpenFile(path, os.O_RDWR, 0660)
+	var mode os.FileMode
+	if exec {
+		mode = 0755
+	} else {
+		mode = 0660
+	}
+
+	f, err := os.OpenFile(path, os.O_RDWR, mode)
 	defer f.Close()
 
 	if err != nil {
@@ -43,5 +50,6 @@ func WriteFileLines(path string, lines []string) error {
 		sc.WriteString(l + "\n")
 	}
 
+	os.Chmod(path, mode)
 	return sc.Flush()
 }

@@ -1,4 +1,4 @@
-package main
+package main // Inserted comment
 
 import (
 	"flag"
@@ -49,7 +49,6 @@ func main() {
 
 			case "work":
 				diff, _ := GitDiffFiles()
-
 				diff = functional.Map(func(s string) string { return root + "/" + s }, diff).([]string)
 
 				fmt.Println("Files to check: ", diff)

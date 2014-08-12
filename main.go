@@ -1,10 +1,10 @@
 package main
 
-//TODO: test
 import (
 	"flag"
 	"fmt"
 	"log"
+	"path"
 	"regexp"
 
 	"code.google.com/p/goauth2/oauth"
@@ -17,6 +17,10 @@ import (
 var (
 	token = flag.String("token", "", "Github setup token")
 	reset = flag.Bool("reset", false, "Reset Github token")
+)
+
+const (
+	TODOS_DIRECTORY = ".todos/"
 )
 
 func init() {
@@ -38,50 +42,63 @@ func main() {
 			showHelp()
 		} else {
 
+			global := OpenConfiguration(HOME_DIRECTORY_CONFIG)
+			defer global.File.Close()
+			local := OpenConfiguration(root)
+			defer local.File.Close()
+
 			mode := flag.Args()[0]
 			switch mode {
 			case "setup":
 
-				f := OpenConfiguration(HOME_DIRECTORY_CONFIG)
-				defer f.File.Close()
-
 				// Check config file for github access token
 				if *token != "" {
+					global.Config.GithubToken = *token
 
-					f.Config.GithubToken = *token
-
-				} else if f.Config.GithubToken == "" || *reset {
+				} else if global.Config.GithubToken == "" || *reset {
 
 					fmt.Println("Paste Github access token:")
 					open.Run(TOKEN_URL)
 					var scanToken string
 					fmt.Scanln(&scanToken)
-					f.Config.GithubToken = scanToken //TODO: Check if token is valid [Issue: https://github.com/izqui/todos/issues/5]
+					global.Config.GithubToken = scanToken //TODO: Check if token is valid [Issue: https://github.com/izqui/todos/issues/5]
+				}
+				global.WriteConfiguration()
+
+				if local.Config.Owner == "" || local.Config.Repo == "" || *reset {
+
+					owner, repo, _ := GitGetOwnerRepoFromRepository()
+					fmt.Printf("Enter the Github owner of the repo (Default: %s):\n", owner)
+					fmt.Scanln(&owner)
+					fmt.Printf("Enter the Github repo name (Default: %s):\n", repo)
+					fmt.Scanln(&repo)
+
+					// TODO: Check if repository exists
+					local.Config.Owner = owner
+					local.Config.Repo = repo
 				}
 
-				f.WriteConfiguration()
+				local.WriteConfiguration()
+				logOnError(GitAdd(path.Join(root, TODOS_DIRECTORY)))
 
 				setupHook(root + "/.git/hooks/pre-commit")
 
 			case "work":
 
-				f := OpenConfiguration(HOME_DIRECTORY_CONFIG)
-				defer f.File.Close()
-
-				if f.Config.GithubToken == "" {
+				if global.Config.GithubToken == "" {
 
 					fmt.Println("Missing Github token. Set it in ~/.todos/conf.json")
 
 				} else {
 
 					o := &oauth.Transport{
-						Token: &oauth.Token{AccessToken: f.Config.GithubToken},
+						Token: &oauth.Token{AccessToken: global.Config.GithubToken},
 					}
 
-					owner, repo, err := GetOwnerRepoFromRepository()
-					logOnError(err)
+					owner := local.Config.Owner
+					repo := local.Config.Repo
 
-					fmt.Println("Scanning changed files on", owner, repo)
+					fmt.Printf("[Todos] Scanning changed files on %s/%s\n", owner, repo)
 
 					client := github.NewClient(o.Client())
 
@@ -108,6 +125,7 @@ func main() {
 
 							if ex == "" && todo != "" {
 
+								fmt.Println("[Todos] Creating issue", todo)
 								issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo})
 								logOnError(err)
 

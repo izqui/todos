@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -30,7 +31,7 @@ func GitDiffFiles() ([]string, error) {
 	return arr[:len(arr)-1], nil
 }
 
-func GetOwnerRepoFromRepository() (owner, repo string, err error) {
+func GitGetOwnerRepoFromRepository() (owner, repo string, err error) {
 
 	cmd := exec.Command("git", "ls-remote", "--get-url")
 	res, err := cmd.Output()
@@ -46,4 +47,12 @@ func GetOwnerRepoFromRepository() (owner, repo string, err error) {
 
 	owner, repo = func(arr []string) (a, b string) { return arr[0], arr[1] }(strings.Split(remote, "/"))
 	return
+}
+
+func GitAdd(add string) error {
+
+	cmd := exec.Command("git", "add", add)
+	_, err := cmd.Output()
+
+	return err
 }

@@ -3,10 +3,14 @@ package main // Inserted comment
 import (
 	"flag"
 	"fmt"
-	"github.com/izqui/functional"
-	"github.com/skratchdot/open-golang/open"
 	"log"
 	"regexp"
+
+	"code.google.com/p/goauth2/oauth"
+	"github.com/google/go-github/github"
+	"github.com/skratchdot/open-golang/open"
+
+	"github.com/izqui/functional"
 )
 
 func init() {
@@ -42,7 +46,7 @@ func main() {
 					open.Run(TOKEN_URL)
 					var token string
 					fmt.Scanln(&token)
-					f.Config.GithubToken = token //TODO: Check if token is valid
+					f.Config.GithubToken = token //TODO: Check if token is valid [Issue: https://github.com/izqui/todos/issues/5]
 					f.WriteConfiguration()
 				}
 
@@ -50,25 +54,59 @@ func main() {
 
 			case "work":
 
-				fmt.Println("Scanning changed files...")
-				diff, _ := GitDiffFiles()
-				diff = functional.Map(func(s string) string { return root + "/" + s }, diff).([]string)
+				f := OpenConfiguration(HOME_DIRECTORY_CONFIG)
+				defer f.File.Close()
 
-				existingRegex, err := regexp.Compile(ISSUE_URL_REGEX)
-				logOnError(err)
-				todoRegex, err := regexp.Compile(TODO_REGEX)
-				logOnError(err)
+				if f.Config.GithubToken == "" {
 
-				for _, file := range diff {
-					lines, err := ReadFileLines(file)
+					fmt.Println("Missing Github token. Set it in ~/.todos/conf.json")
+
+				} else {
+
+					o := &oauth.Transport{
+						Token: &oauth.Token{AccessToken: f.Config.GithubToken},
+					}
+
+					owner, repo, err := GetOwnerRepoFromRepository()
 					logOnError(err)
 
-					for _, line := range lines {
-						ex := existingRegex.FindString(line)
-						todo := todoRegex.FindString(line)
+					fmt.Println("Scanning changed files on", owner, repo)
 
-						if ex == "" && todo != "" {
-							fmt.Println("Found todo", todo)
+					client := github.NewClient(o.Client())
+
+					diff, _ := GitDiffFiles()
+					diff = functional.Map(func(s string) string { return root + "/" + s }, diff).([]string)
+
+					existingRegex, err := regexp.Compile(ISSUE_URL_REGEX)
+					logOnError(err)
+					todoRegex, err := regexp.Compile(TODO_REGEX)
+					logOnError(err)
+
+					for _, file := range diff {
+						lines, err := ReadFileLines(file)
+						logOnError(err)
+
+						changes := false
+
+						for i, line := range lines {
+
+							//TODO: Make async [Issue: https://github.com/izqui/todos/issues/6]
+
+							ex := existingRegex.FindString(line)
+							todo := todoRegex.FindString(line)
+
+							if ex == "" && todo != "" {
+
+								issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo})
+								logOnError(err)
+
+								lines[i] = fmt.Sprintf("%s [Issue: %s]", line, *issue.HTMLURL)
+								changes = true
+							}
+						}
+
+						if changes {
+							logOnError(WriteFileLines(file, lines))
 						}
 					}
 				}
@@ -82,7 +120,7 @@ func main() {
 
 func showHelp() {
 
-	fmt.Println("Unknown command") //TODO: Write help
+	fmt.Println("Unknown command") //TODO: Write help [Issue: https://github.com/izqui/todos/issues/7]
 }
 func logOnError(err error) {
 

@@ -14,7 +14,7 @@ func GitDirectoryRoot() (string, error) {
 		return "", err
 	}
 
-	return strings.Split(string(res), "\n")[0], nil
+	return strings.TrimSuffix(string(res), "\n"), nil
 }
 
 func GitDiffFiles() ([]string, error) {
@@ -28,4 +28,22 @@ func GitDiffFiles() ([]string, error) {
 
 	arr := strings.Split(string(res), "\n")
 	return arr[:len(arr)-1], nil
+}
+
+func GetOwnerRepoFromRepository() (owner, repo string, err error) {
+
+	cmd := exec.Command("git", "ls-remote", "--get-url")
+	res, err := cmd.Output()
+
+	if err != nil {
+		return "", "", err
+	}
+
+	remote := string(res)
+	remote = strings.TrimSuffix(remote, ".git\n")
+	remote = strings.TrimPrefix(remote, "git@github.com:")
+	remote = strings.TrimPrefix(remote, "https://github.com/")
+
+	owner, repo = func(arr []string) (a, b string) { return arr[0], arr[1] }(strings.Split(remote, "/"))
+	return
 }

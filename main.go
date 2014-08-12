@@ -73,7 +73,7 @@ func main() {
 					fmt.Printf("Enter the Github repo name (Default: %s):\n", repo)
 					fmt.Scanln(&repo)
 
-					// TODO: Check if repository exists
+					// TODO: Check if repository exists [Issue: https://github.com/izqui/todos/issues/8]
 					local.Config.Owner = owner
 					local.Config.Repo = repo
 				}
@@ -102,9 +102,17 @@ func main() {
 
 					client := github.NewClient(o.Client())
 
-					diff, _ := GitDiffFiles()
-					diff = functional.Map(func(s string) string { return root + "/" + s }, diff).([]string)
+					// Try to read lines from Stdin, if not talk to git
+					diff, err := ReadStdin()
+					if len(diff) == 0 {
 
+						diff, err = GitDiffFiles()
+						logOnError(err)
+					}
+
+					diff = functional.Map(func(s string) string { return path.Join(root, s) }, diff).([]string)
+
+					log.Println("Checking", diff)
 					existingRegex, err := regexp.Compile(ISSUE_URL_REGEX)
 					logOnError(err)
 					todoRegex, err := regexp.Compile(TODO_REGEX)
@@ -150,7 +158,7 @@ func main() {
 func setupHook(path string) {
 
 	bash := "#!/bin/bash"
-	script := "todos work"
+	script := "git diff --cached --name-only | todos work"
 
 	lns, err := ReadFileLines(path)
 	logOnError(err)

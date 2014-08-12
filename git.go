@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -20,7 +19,7 @@ func GitDirectoryRoot() (string, error) {
 
 func GitDiffFiles() ([]string, error) {
 
-	cmd := exec.Command("git", "diff", "--name-only")
+	cmd := exec.Command("git", "diff", "--cached", "--name-only")
 	res, err := cmd.Output()
 
 	if err != nil {
@@ -29,6 +28,7 @@ func GitDiffFiles() ([]string, error) {
 
 	arr := strings.Split(string(res), "\n")
 	return arr[:len(arr)-1], nil
+
 }
 
 func GitGetOwnerRepoFromRepository() (owner, repo string, err error) {

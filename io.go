@@ -2,10 +2,12 @@ package main
 
 import (
 	"bufio"
+	"errors"
+	"github.com/andrew-d/go-termutil"
+	"io/ioutil"
 	"os"
+	"strings"
 )
-
-//TODO: Read file based on regex directly
 
 func ReadFileLines(path string) ([]string, error) {
 
@@ -17,7 +19,13 @@ func ReadFileLines(path string) ([]string, error) {
 		return nil, err
 	}
 
-	sc := bufio.NewScanner(f)
+	return ReadLinesFromFile(f)
+
+}
+
+func ReadLinesFromFile(file *os.File) ([]string, error) {
+
+	sc := bufio.NewScanner(file)
 	lines := []string{}
 
 	for sc.Scan() {
@@ -25,6 +33,22 @@ func ReadFileLines(path string) ([]string, error) {
 	}
 
 	return lines, sc.Err()
+}
+
+func ReadStdin() ([]string, error) {
+
+	if termutil.Isatty(os.Stdin.Fd()) {
+		return nil, errors.New("Stdin is empty")
+	}
+
+	bs, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+
+		return nil, err
+	}
+
+	str := strings.TrimSuffix(string(bs), "\n")
+	return strings.Split(str, "\n"), nil
 }
 
 func WriteFileLines(path string, lines []string, exec bool) error {

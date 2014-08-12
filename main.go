@@ -6,6 +6,7 @@ import (
 	"github.com/izqui/functional"
 	"github.com/skratchdot/open-golang/open"
 	"log"
+	"regexp"
 )
 
 func init() {
@@ -48,10 +49,29 @@ func main() {
 				// Set git "precommit" Hook
 
 			case "work":
+
+				fmt.Println("Scanning changed files...")
 				diff, _ := GitDiffFiles()
 				diff = functional.Map(func(s string) string { return root + "/" + s }, diff).([]string)
 
-				fmt.Println("Files to check: ", diff)
+				existingRegex, err := regexp.Compile(ISSUE_URL_REGEX)
+				logOnError(err)
+				todoRegex, err := regexp.Compile(TODO_REGEX)
+				logOnError(err)
+
+				for _, file := range diff {
+					lines, err := ReadFileLines(file)
+					logOnError(err)
+
+					for _, line := range lines {
+						ex := existingRegex.FindString(line)
+						todo := todoRegex.FindString(line)
+
+						if ex == "" && todo != "" {
+							fmt.Println("Found todo", todo)
+						}
+					}
+				}
 
 			default:
 				showHelp()

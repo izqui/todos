@@ -144,12 +144,12 @@ func main() {
 							if ex == "" && todo != "" {
 
 								issues++
-								go func(chan Todo) {
+								go func(line int, cb chan Todo) {
 
 									issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo})
 									logOnError(err)
-									cb <- Todo{URL: *issue.HTMLURL, Line: i, File: file}
-								}(cb)
+									cb <- Todo{URL: *issue.HTMLURL, Line: line, File: file}
+								}(i, cb)
 							}
 						}
 

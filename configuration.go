@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"os/user"
 	"path"
@@ -10,6 +11,7 @@ import (
 const (
 	HOME_DIRECTORY_CONFIG = "my home dir"
 	TODOS_CONF            = "conf.json"
+	ISSUE_CACHE           = "issues.json"
 	TOKEN_URL             = "https://github.com/settings/tokens/new?scopes=repo,public_repo"
 )
 
@@ -21,6 +23,44 @@ type Configuration struct {
 
 type ConfFile struct {
 	Config Configuration
+	File   *os.File
+}
+
+type Issue struct {
+	File        string `json:"file,omitempty"`
+	Hash        string `json:"hash,omitempty"`
+	IssueNumber int    `json:"issue_number,omitempty"`
+
+	Line     int    `json:"-"`
+	IssueURL string `json:"-"`
+}
+
+type IssueSlice []*Issue
+
+func (slice IssueSlice) Len() int {
+
+	return len(slice)
+}
+
+func (slice IssueSlice) Swap(i, j int) {
+
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+func (slice IssueSlice) Less(i, j int) bool {
+
+	return slice[i].Hash < slice[j].Hash
+}
+
+func (slice IssueSlice) remove(i int) IssueSlice {
+
+	copy(slice[i:], slice[i+1:])
+	slice[len(slice)-1] = nil
+	return slice[:len(slice)-1]
+}
+
+type IssueCacheFile struct {
+	Issues IssueSlice
 	File   *os.File
 }
 
@@ -49,11 +89,74 @@ func OpenConfiguration(dir string) *ConfFile {
 	return &ConfFile{File: f, Config: conf}
 }
 
-func (conf *ConfFile) WriteConfiguration() {
+func (conf *ConfFile) WriteConfiguration() error {
 
 	conf.File.Seek(0, 0)
 	err := json.NewEncoder(conf.File).Encode(conf.Config)
 	logOnError(err)
 
-	conf.File.Close()
+	return conf.File.Close()
+}
+
+func LoadIssueCache(dir string) *IssueCacheFile {
+
+	dir = path.Join(dir, TODOS_DIRECTORY)
+
+	f, err := os.OpenFile(path.Join(dir, ISSUE_CACHE), os.O_RDWR|os.O_CREATE, 0660)
+	logOnError(err)
+
+	issues := IssueSlice{}
+	json.NewDecoder(f).Decode(&issues)
+
+	return &IssueCacheFile{File: f, Issues: issues}
+}
+
+func (cache *IssueCacheFile) GetIssuesInFile(file string) IssueSlice {
+
+	array := IssueSlice{}
+
+	for _, is := range cache.Issues {
+
+		if is.File == file {
+
+			array = append(array, is)
+		}
+	}
+
+	return array
+
+}
+
+func (cache *IssueCacheFile) RemoveIssue(issue Issue) error {
+
+	for i, is := range cache.Issues {
+
+		if issue == *is {
+
+			cache.Issues.remove(i)
+		}
+	}
+
+	return errors.New("Not found")
+}
+
+/*
+func (cache *IssueCacheFile) GetIssue(file, title string) (Issue, error) {
+
+	for _, i := range cache.Issues {
+
+		if i.File == file && i.Hash ==
+		return i, nil
+	}
+
+	return Issue{}, errors.New("Not found")
+}*/
+
+func (cache *IssueCacheFile) WriteIssueCache() error {
+
+	cache.File.Seek(0, 0)
+	err := json.NewEncoder(cache.File).Encode(cache.Issues)
+	logOnError(err)
+
+	return cache.File.Close()
 }

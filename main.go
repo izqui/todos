@@ -14,6 +14,7 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/izqui/functional"
+	"github.com/izqui/helpers"
 )
 
 var (
@@ -24,15 +25,6 @@ var (
 const (
 	TODOS_DIRECTORY = ".todos/"
 )
-
-type Todo struct {
-	File        string `json:"file"`
-	Title       string `json:"title"`
-	IssueNumber int    `json:"issue_number"`
-
-	Line     int    `json:"-"`
-	IssueURL string `json:"-"`
-}
 
 func init() {
 
@@ -89,7 +81,7 @@ func main() {
 					local.Config.Repo = repo
 				}
 
-				local.WriteConfiguration()
+				logOnError(local.WriteConfiguration())
 				logOnError(GitAdd(path.Join(root, TODOS_DIRECTORY)))
 
 				setupHook(root + "/.git/hooks/pre-commit")
@@ -128,7 +120,14 @@ func main() {
 					todoRegex, err := regexp.Compile(TODO_REGEX)
 					logOnError(err)
 
+					cacheFile := LoadIssueCache(root)
+					cacheChanges := false
+
 					for _, file := range diff {
+
+						fileIssuesCache := cacheFile.GetIssuesInFile(file)
+						fileIssuesCacheCopy := fileIssuesCache
+						removed := 0
 
 						fmt.Println("[Todos] Checking file: ", file)
 
@@ -137,40 +136,64 @@ func main() {
 
 						changes := false
 
-						cb := make(chan Todo)
-						issues := 0
+						cb := make(chan Issue)
+						issuesCount := 0
 
 						for i, line := range lines {
 
 							ex := existingRegex.FindString(line)
 							todo := todoRegex.FindString(line)
 
-							if ex == "" && todo != "" {
+							if ex != "" {
 
-								issues++
-								go func(line int, cb chan Todo) {
+								for i, is := range fileIssuesCache {
+
+									if is != nil && is.Hash == helpers.SHA1([]byte(ex)) {
+
+										cacheChanges = true
+										fileIssuesCacheCopy.remove(i - removed)
+										removed++
+										fmt.Println("Detected Existing Issue #", is.IssueNumber)
+									}
+								}
+
+							} else if todo != "" {
+
+								issuesCount++
+								go func(line int, cb chan Issue) {
 
 									issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo})
 									logOnError(err)
-									cb <- Todo{IssueURL: *issue.HTMLURL, IssueNumber: *issue.Number, Line: line, File: file, Title: todo}
+									cb <- Issue{IssueURL: *issue.HTMLURL, IssueNumber: *issue.Number, Line: line, File: file}
 								}(i, cb)
 							}
 						}
-
-						for issues > 0 {
+					loop:
+						for issuesCount > 0 {
 
 							select {
-							case todo := <-cb:
+							case issue := <-cb:
 
-								// TODO: Save issue in .todos directory
-
-								lines[todo.Line] = fmt.Sprintf("%s [Issue: %s]", lines[todo.Line], todo.IssueURL)
-								fmt.Printf("[Todos] Created issue %d: %s\n", todo.IssueNumber, todo.Title)
+								ref := fmt.Sprintf("[Issue: %s]", issue.IssueURL)
+								lines[issue.Line] = fmt.Sprintf("%s %s", lines[issue.Line], ref)
+								fmt.Printf("[Todos] Created issue #%d: %s\n", issue.IssueNumber)
 								changes = true
-								issues--
+								issuesCount--
+
+								issue.Hash = helpers.SHA1([]byte(ref))
+								cacheFile.Issues = append(cacheFile.Issues, &issue)
+								cacheChanges = true
 
 							case <-timeout(3 * time.Second):
-								break // TODO: Test if break works
+								break loop
+							}
+						}
+
+						for _, is := range fileIssuesCacheCopy {
+
+							if is != nil {
+
+								fmt.Println("Detected removed Issue #", is.IssueNumber)
 							}
 						}
 
@@ -178,6 +201,10 @@ func main() {
 							logOnError(WriteFileLines(file, lines, false))
 						} else {
 							fmt.Println("[Todos] No todos found")
+						}
+
+						if cacheChanges {
+							logOnError(cacheFile.WriteIssueCache())
 						}
 					}
 				}

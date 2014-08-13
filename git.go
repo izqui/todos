@@ -19,7 +19,7 @@ func GitDirectoryRoot() (string, error) {
 
 func GitDiffFiles() ([]string, error) {
 
-	cmd := exec.Command("git", "diff", "--cached", "--name-only")
+	cmd := exec.Command("git", "diff", "--name-only")
 	res, err := cmd.Output()
 
 	if err != nil {

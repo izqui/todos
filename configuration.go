@@ -100,11 +100,15 @@ func (conf *ConfFile) WriteConfiguration() error {
 	return conf.File.Close()
 }
 
+func IssueCacheFilePath(dir string) string {
+
+	return path.Join(dir, TODOS_DIRECTORY, ISSUE_CACHE)
+}
 func LoadIssueCache(dir string) *IssueCacheFile {
 
-	dir = path.Join(dir, TODOS_DIRECTORY)
+	filepath := IssueCacheFilePath(dir)
 
-	f, err := os.OpenFile(path.Join(dir, ISSUE_CACHE), os.O_RDWR|os.O_CREATE, 0660)
+	f, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, 0660)
 	logOnError(err)
 
 	issues := IssueSlice{}

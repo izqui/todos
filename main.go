@@ -1,12 +1,13 @@
 package main
 
-//TODO: Todo creation is working again :)
+//TODO: Todo creation is working again :) [Issue: https://github.com/izqui/todos/issues/9]
 import (
 	"flag"
 	"fmt"
 	"log"
 	"path"
 	"regexp"
+	"time"
 
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
@@ -23,6 +24,11 @@ var (
 const (
 	TODOS_DIRECTORY = ".todos/"
 )
+
+type Todo struct {
+	URL, File string
+	Line      int
+}
 
 func init() {
 
@@ -113,33 +119,52 @@ func main() {
 
 					diff = functional.Map(func(s string) string { return path.Join(root, s) }, diff).([]string)
 
-					log.Println("Checking", diff)
 					existingRegex, err := regexp.Compile(ISSUE_URL_REGEX)
 					logOnError(err)
 					todoRegex, err := regexp.Compile(TODO_REGEX)
 					logOnError(err)
 
 					for _, file := range diff {
+
+						fmt.Println("[Todos] Checking file: ", file)
+
 						lines, err := ReadFileLines(file)
 						logOnError(err)
 
 						changes := false
 
-						for i, line := range lines {
+						cb := make(chan Todo)
+						issues := 0
 
-							//TODO: Make async [Issue: https://github.com/izqui/todos/issues/6]
+						for i, line := range lines {
 
 							ex := existingRegex.FindString(line)
 							todo := todoRegex.FindString(line)
 
 							if ex == "" && todo != "" {
 
-								fmt.Println("[Todos] Creating issue", todo)
-								issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo})
-								logOnError(err)
+								issues++
+								go func(chan Todo) {
 
-								lines[i] = fmt.Sprintf("%s [Issue: %s]", line, *issue.HTMLURL)
+									issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo})
+									logOnError(err)
+									cb <- Todo{URL: *issue.HTMLURL, Line: i, File: file}
+								}(cb)
+							}
+						}
+
+						for issues > 0 {
+
+							select {
+							case todo := <-cb:
+
+								lines[todo.Line] = fmt.Sprintf("%s [Issue: %s]", lines[todo.Line], todo.URL)
+								fmt.Println("Created issue", lines[todo.Line])
 								changes = true
+								issues--
+
+							case <-timeout(3 * time.Second):
+								break
 							}
 						}
 
@@ -154,6 +179,17 @@ func main() {
 			}
 		}
 	}
+}
+
+func timeout(i time.Duration) chan bool {
+
+	t := make(chan bool)
+	go func() {
+		time.Sleep(i)
+		t <- true
+	}()
+
+	return t
 }
 
 func setupHook(path string) {

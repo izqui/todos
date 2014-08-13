@@ -1,7 +1,5 @@
 package main
 
-//TODO: Start refactoring, you lazy ass
-
 import (
 	"flag"
 	"fmt"

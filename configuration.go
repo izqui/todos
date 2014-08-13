@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"github.com/izqui/functional"
 	"os"
 	"os/user"
 	"path"
@@ -91,6 +92,7 @@ func OpenConfiguration(dir string) *ConfFile {
 
 func (conf *ConfFile) WriteConfiguration() error {
 
+	conf.File.Truncate(0)
 	conf.File.Seek(0, 0)
 	err := json.NewEncoder(conf.File).Encode(conf.Config)
 	logOnError(err)
@@ -154,7 +156,10 @@ func (cache *IssueCacheFile) GetIssue(file, title string) (Issue, error) {
 
 func (cache *IssueCacheFile) WriteIssueCache() error {
 
+	cache.File.Truncate(0)
 	cache.File.Seek(0, 0)
+
+	cache.Issues = functional.Filter(func(i *Issue) bool { return i == nil }, cache.Issues).([]*Issue)
 	err := json.NewEncoder(cache.File).Encode(cache.Issues)
 	logOnError(err)
 

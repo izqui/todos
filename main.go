@@ -1,6 +1,7 @@
 package main
 
-//TODO: Todo creation is working again :) [Issue: https://github.com/izqui/todos/issues/9]
+//TODO: Start refactoring, you lazy ass
+
 import (
 	"flag"
 	"fmt"
@@ -64,7 +65,7 @@ func main() {
 					open.Run(TOKEN_URL)
 					var scanToken string
 					fmt.Scanln(&scanToken)
-					global.Config.GithubToken = scanToken //TODO: Check if token is valid [Issue: https://github.com/izqui/todos/issues/5]
+					global.Config.GithubToken = scanToken //TODO: Check if token is valid [Issue: https://github.com/izqui/todos/issues/17]
 				}
 				global.WriteConfiguration()
 
@@ -76,7 +77,7 @@ func main() {
 					fmt.Printf("Enter the Github repo name (Default: %s):\n", repo)
 					fmt.Scanln(&repo)
 
-					// TODO: Check if repository exists [Issue: https://github.com/izqui/todos/issues/8]
+					// TODO: Check if repository exists [Issue: https://github.com/izqui/todos/issues/18]
 					local.Config.Owner = owner
 					local.Config.Repo = repo
 				}
@@ -90,8 +91,11 @@ func main() {
 
 				if global.Config.GithubToken == "" {
 
-					fmt.Println("Missing Github token. Set it in ~/.todos/conf.json")
+					fmt.Println("[Todos] Missing Github token. Set it in ~/.todos/conf.json")
 
+				} else if local.Config.Owner == "" || local.Config.Repo == "" {
+
+					fmt.Println("[Todos] You need to setup the repo running 'todos setup'")
 				} else {
 
 					o := &oauth.Transport{
@@ -150,10 +154,10 @@ func main() {
 
 									if is != nil && is.Hash == helpers.SHA1([]byte(ex)) {
 
-										cacheChanges = true
-										fileIssuesCacheCopy.remove(i - removed)
-										removed++
 										fmt.Println("Detected Existing Issue #", is.IssueNumber)
+										cacheChanges = true
+										fileIssuesCacheCopy = fileIssuesCacheCopy.remove(i)
+										removed++
 									}
 								}
 
@@ -164,7 +168,10 @@ func main() {
 
 									issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo})
 									logOnError(err)
-									cb <- Issue{IssueURL: *issue.HTMLURL, IssueNumber: *issue.Number, Line: line, File: file}
+
+									if issue != nil {
+										cb <- Issue{IssueURL: *issue.HTMLURL, IssueNumber: *issue.Number, Line: line, File: file}
+									}
 								}(i, cb)
 							}
 						}
@@ -176,7 +183,7 @@ func main() {
 
 								ref := fmt.Sprintf("[Issue: %s]", issue.IssueURL)
 								lines[issue.Line] = fmt.Sprintf("%s %s", lines[issue.Line], ref)
-								fmt.Printf("[Todos] Created issue #%d: %s\n", issue.IssueNumber)
+								fmt.Printf("[Todos] Created issue #%d\n", issue.IssueNumber)
 								changes = true
 								issuesCount--
 
@@ -189,11 +196,34 @@ func main() {
 							}
 						}
 
+						closeCount := 0
+						closeCb := make(chan Issue)
 						for _, is := range fileIssuesCacheCopy {
 
 							if is != nil {
 
-								fmt.Println("Detected removed Issue #", is.IssueNumber)
+								closeCount++
+								go func(i Issue) {
+
+									var closed string = "closed"
+									_, _, err := client.Issues.Edit(owner, repo, is.IssueNumber, &github.IssueRequest{State: &closed})
+									logOnError(err)
+									closeCb <- i
+								}(*is)
+							}
+						}
+
+					loops:
+						for closeCount > 0 {
+							select {
+							case is := <-closeCb:
+								closeCount--
+								fmt.Println("[Todos] Closed issue #", is.IssueNumber)
+								cacheFile.RemoveIssue(is)
+								cacheChanges = true
+
+							case <-timeout(3 * time.Second):
+								break loops
 							}
 						}
 
@@ -249,7 +279,7 @@ func setupHook(path string) {
 
 func showHelp() {
 
-	fmt.Println("Unknown command") //TODO: Write help [Issue: https://github.com/izqui/todos/issues/7]
+	fmt.Println("Unknown command") //TODO: Write help [Issue: https://github.com/izqui/todos/issues/19]
 }
 func logOnError(err error) {
 

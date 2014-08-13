@@ -26,8 +26,12 @@ const (
 )
 
 type Todo struct {
-	URL, File string
-	Line      int
+	File        string `json:"file"`
+	Title       string `json:"title"`
+	IssueNumber int    `json:"issue_number"`
+
+	Line     int    `json:"-"`
+	IssueURL string `json:"-"`
 }
 
 func init() {
@@ -148,7 +152,7 @@ func main() {
 
 									issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo})
 									logOnError(err)
-									cb <- Todo{URL: *issue.HTMLURL, Line: line, File: file}
+									cb <- Todo{IssueURL: *issue.HTMLURL, IssueNumber: *issue.Number, Line: line, File: file, Title: todo}
 								}(i, cb)
 							}
 						}
@@ -158,8 +162,10 @@ func main() {
 							select {
 							case todo := <-cb:
 
-								lines[todo.Line] = fmt.Sprintf("%s [Issue: %s]", lines[todo.Line], todo.URL)
-								fmt.Println("[Todos] Created issue", lines[todo.Line])
+								// TODO: Save issue in .todos directory
+
+								lines[todo.Line] = fmt.Sprintf("%s [Issue: %s]", lines[todo.Line], todo.IssueURL)
+								fmt.Printf("[Todos] Created issue %d: %s\n", todo.IssueNumber, todo.Title)
 								changes = true
 								issues--
 

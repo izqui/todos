@@ -1,7 +1,5 @@
 package main
 
-// TODO: Refactor
-
 import (
 	"flag"
 	"fmt"
@@ -229,6 +227,7 @@ func main() {
 
 						if changes {
 							logOnError(WriteFileLines(file, lines, false))
+							GitAdd(file)
 						} else {
 							fmt.Println("[Todos] No todos found")
 						}

@@ -164,7 +164,7 @@ func main() {
 								issues--
 
 							case <-timeout(3 * time.Second):
-								break
+								break // TODO: Test if break works
 							}
 						}
 
@@ -221,6 +221,6 @@ func showHelp() {
 func logOnError(err error) {
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Err:", err)
 	}
 }

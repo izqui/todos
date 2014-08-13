@@ -159,7 +159,7 @@ func main() {
 							case todo := <-cb:
 
 								lines[todo.Line] = fmt.Sprintf("%s [Issue: %s]", lines[todo.Line], todo.URL)
-								fmt.Println("Created issue", lines[todo.Line])
+								fmt.Println("[Todos] Created issue", lines[todo.Line])
 								changes = true
 								issues--
 
@@ -170,6 +170,8 @@ func main() {
 
 						if changes {
 							logOnError(WriteFileLines(file, lines, false))
+						} else {
+							fmt.Println("[Todos] No todos found")
 						}
 					}
 				}

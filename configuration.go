@@ -159,7 +159,7 @@ func (cache *IssueCacheFile) WriteIssueCache() error {
 	cache.File.Truncate(0)
 	cache.File.Seek(0, 0)
 
-	cache.Issues = functional.Filter(func(i *Issue) bool { return i == nil }, cache.Issues).([]*Issue)
+	cache.Issues = functional.Filter(func(i *Issue) bool { return i != nil }, cache.Issues).([]*Issue)
 	err := json.NewEncoder(cache.File).Encode(cache.Issues)
 	logOnError(err)
 

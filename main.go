@@ -1,5 +1,7 @@
 package main
 
+// TODO: Refactor main [Issue: https://github.com/izqui/todos/issues/26]
+
 import (
 	"flag"
 	"fmt"

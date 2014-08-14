@@ -10,7 +10,7 @@
 * `todos work`: 
 	* cd's root directory (git rev-parse --show-toplevel) and fail if there's no git repo
 	* gets list of files to check from stdin or git diffs and gets list of changed files (git diff --show-names)
-	* inspects this files looking for "// TODO:" [Issue: https://github.com/izqui/todos/issues/28]
+	* inspects this files looking for "// TODO:" [Issue: https://github.com/izqui/todos/issues/31]
 	* posts issue to github
 
 

@@ -6,6 +6,7 @@ import (
 	"log"
 	"path"
 	"regexp"
+	"strings"
 	"time"
 
 	"code.google.com/p/goauth2/oauth"
@@ -154,6 +155,7 @@ func work(root string, files []string) {
 
 			fileIssuesCache := cacheFile.GetIssuesInFile(file)
 			fileIssuesCacheCopy := fileIssuesCache
+
 			removed := 0
 
 			fmt.Println("[Todos] Checking file: ", file)
@@ -188,7 +190,13 @@ func work(root string, files []string) {
 					issuesCount++
 					go func(line int, cb chan Issue) {
 
-						issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo})
+						branch, _ := GitBranch()
+
+						relativeFilePath := pathDifference(root, file)
+						filename := path.Base(file)
+
+						body := fmt.Sprintf(ISSUE_BODY, filename, fmt.Sprintf(GITHUB_FILE_URL, owner, repo, branch, relativeFilePath))
+						issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo, Body: &body})
 						logOnError(err)
 
 						if issue != nil {
@@ -264,6 +272,10 @@ func work(root string, files []string) {
 	}
 }
 
+func pathDifference(p1, p2 string) string {
+
+	return path.Join(strings.Split(p2, "/")[len(strings.Split(p1, "/")):]...)
+}
 func timeout(i time.Duration) chan bool {
 
 	t := make(chan bool)

@@ -8,6 +8,11 @@ Todos installs a git precommit hook in your local Git repository, so whenever yo
 
 In the same way, when you delete the TODO from your code, todos will mark the issue as closed in Github.
 
+### How to install it? 
+
+```.sh 
+go install github.com/izqui/todos
+```
 * `todos setup`: 
 	* checks if dir is a git repo
 	* checks ~/.todos/conf for conf file with github token

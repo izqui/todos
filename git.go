@@ -58,6 +58,16 @@ func GitAdd(add string) error {
 	return err
 }
 
+func GitBranch() (string, error) {
+	c := strings.Split("rev-parse --abbrev-ref HEAD", " ")
+	cmd := exec.Command("git", c...)
+
+	res, err := cmd.Output()
+
+	arr := strings.Split(string(res), "\n")
+	return arr[0], err
+}
+
 func SetupGitHook(path string) {
 
 	bash := "#!/bin/bash"

@@ -123,7 +123,7 @@ func (cache *IssueCacheFile) GetIssuesInFile(file string) IssueSlice {
 
 	for _, is := range cache.Issues {
 
-		if is.File == file {
+		if is != nil && is.File == file {
 
 			array = append(array, is)
 		}
@@ -137,7 +137,7 @@ func (cache *IssueCacheFile) RemoveIssue(issue Issue) error {
 
 	for i, is := range cache.Issues {
 
-		if issue == *is {
+		if is != nil && issue == *is {
 
 			cache.Issues.remove(i)
 		}

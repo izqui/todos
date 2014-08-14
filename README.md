@@ -1,6 +1,22 @@
 # Todos
+![Todos](github.com/izqui/todos/blob/master/demo.gif)
 
-Get the todos in your code directly in Github Issues.
+Get the TODO's in your code directly in Github Issues. Uses pre-commit Git hooks to check for new TODO's every time you commit to the repo.
+
+[Example](#how-to-install-it)
+
+### How to install it? 
+
+At the moment of writing, you need to have Go installed. //TODO: Create distribution binaries [Issue: https://github.com/izqui/todos/issues/41]
+```.sh 
+go get github.com/izqui/todos
+go install github.com/izqui/todos
+```
+### How to use it?
+
+Just run `todos setup` inside the repo you'd like to track your issues.
+
+Make sure you have `$GOPATH/bin` in your `$PATH`
 
 ### How does it work?
 
@@ -8,24 +24,17 @@ Todos installs a git precommit hook in your local Git repository, so whenever yo
 
 In the same way, when you delete the TODO from your code, todos will mark the issue as closed in Github.
 
-### How to install it? 
-
-```.sh 
-go install github.com/izqui/todos
-```
 * `todos setup`: 
-	* checks if dir is a git repo
-	* checks ~/.todos/conf for conf file with github token
-	* asks for github token if it doesn't exist
-	* asks for github owner/repo to know where to post issues
-	* adds precommit hook and makes it executable
+	* Checks if current directory is a git repository
+	* Checks ~/.todos/conf for conf file with github token
+	* Asks for github token if it doesn't exist
+	* Asks for github owner/repo to know where to post issues
+	* Adds precommit hook and makes it executable
 
 * `todos work`: 
-	* cd's root directory (git rev-parse --show-toplevel) and fail if there's no git repo
-	* gets list of files to check from stdin or git diffs and gets list of changed files (git diff --show-names)
-	* inspects this files looking for "// TODO" 
-	* posts issue to github
-
-
-## .todos directory
-	conf.json ->
+	* Checks if current directory is a git repository
+	* Gets list of files to check from stdin or git diffs and gets list of changed files (git diff --show-names)
+	* Inspects this files looking for "// TODO" 
+	* Posts issue to github
+	* Saves a local cache in `.todos/issues.json` of the issues it adds.
+	* Checks the cache for missing todos and closes issue.

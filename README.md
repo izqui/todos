@@ -1,5 +1,5 @@
 # Todos
-![Todos](github.com/izqui/todos/blob/master/demo.gif)
+![Todos](https://github.com/izqui/todos/blob/master/demo.gif)
 
 Get the TODO's in your code directly in Github Issues. Uses pre-commit Git hooks to check for new TODO's every time you commit to the repo.
 

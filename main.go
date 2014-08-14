@@ -86,7 +86,7 @@ func setup(root string) {
 		open.Run(TOKEN_URL)
 		var scanToken string
 		fmt.Scanln(&scanToken)
-		global.Config.GithubToken = scanToken //TODO: Check if token is valid [Issue: https://github.com/izqui/todos/issues/17]
+		global.Config.GithubToken = scanToken //TODO: Check if token is valid [Issue: https://github.com/izqui/todos/issues/29]
 	}
 	logOnError(global.WriteConfiguration())
 
@@ -102,7 +102,7 @@ func setup(root string) {
 		fmt.Printf("Enter the Github repo name (Default: %s):\n", repo)
 		fmt.Scanln(&repo)
 
-		// TODO: Check if repository exists [Issue: https://github.com/izqui/todos/issues/18]
+		// TODO: Check if repository exists [Issue: https://github.com/izqui/todos/issues/30]
 		local.Config.Owner = owner
 		local.Config.Repo = repo
 	}
@@ -253,7 +253,7 @@ func work(root string, files []string) {
 				logOnError(WriteFileLines(file, lines, false))
 				GitAdd(file)
 			} else {
-				fmt.Println("[Todos] No todos found")
+				fmt.Println("[Todos] No new todos found")
 			}
 
 			if cacheChanges {
@@ -284,6 +284,6 @@ func showHelp() {
 func logOnError(err error) {
 
 	if err != nil {
-		log.Println("Err:", err)
+		log.Println("[Todos] Err:", err)
 	}
 }

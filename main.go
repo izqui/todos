@@ -248,7 +248,7 @@ func work(root string, files []string) {
 				select {
 				case is := <-closeCb:
 					closeCount--
-					fmt.Println("[Todos] Closed issue #", is.IssueNumber)
+					fmt.Println("[Todos] Closed issue #", is.IssueNumber) //TODO: Append "Closed todo #x" to commit msg [Issue: https://github.com/izqui/todos/issues/42]
 					cacheFile.RemoveIssue(is)
 					cacheChanges = true
 

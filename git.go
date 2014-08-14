@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/izqui/functional"
 	"os/exec"
 	"strings"
 )
@@ -55,4 +56,23 @@ func GitAdd(add string) error {
 	_, err := cmd.Output()
 
 	return err
+}
+
+func SetupGitHook(path string) {
+
+	bash := "#!/bin/bash"
+	script := "git diff --cached --name-only | todos work"
+
+	lns, err := ReadFileLines(path)
+	logOnError(err)
+
+	if len(lns) == 0 {
+		lns = append(lns, bash)
+	}
+
+	//Filter existing script line
+	lns = functional.Filter(func(a string) bool { return a != script }, lns).([]string)
+	lns = append(lns, script)
+
+	logOnError(WriteFileLines(path, lns, true))
 }

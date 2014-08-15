@@ -60,7 +60,7 @@ func WriteFileLines(path string, lines []string, exec bool) error {
 		mode = 0660
 	}
 
-	f, err := os.OpenFile(path, os.O_RDWR, mode)
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, mode)
 	defer f.Close()
 
 	if err != nil {

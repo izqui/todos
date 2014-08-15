@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/izqui/functional"
 	"os/exec"
+	"path"
 	"strings"
 )
 
@@ -68,10 +70,9 @@ func GitBranch() (string, error) {
 	return arr[0], err
 }
 
-func SetupGitHook(path string) {
+func SetupHook(path string, script string) {
 
 	bash := "#!/bin/bash"
-	script := "git diff --cached --name-only | todos work"
 
 	lns, err := ReadFileLines(path)
 	logOnError(err)
@@ -85,4 +86,17 @@ func SetupGitHook(path string) {
 	lns = append(lns, script)
 
 	logOnError(WriteFileLines(path, lns, true))
+}
+
+func SetupGitPrecommitHook(dir string) {
+
+	SetupHook(path.Join(dir, ".git/hooks/pre-commit"), "git diff --cached --name-only | todos work")
+}
+
+func SetupGitCommitMsgHook(dir string) {
+
+	closedFile := path.Join(dir, TODOS_DIRECTORY, CLOSED_ISSUES_FILENAME)
+	script := fmt.Sprintf("cat %s >> \"$1\"; rm %s", closedFile, closedFile)
+
+	SetupHook(path.Join(dir, ".git/hooks/commit-msg"), script)
 }

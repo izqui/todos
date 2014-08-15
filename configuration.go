@@ -10,10 +10,12 @@ import (
 )
 
 const (
-	HOME_DIRECTORY_CONFIG = "my home dir"
-	TODOS_CONF            = "conf.json"
-	ISSUE_CACHE           = "issues.json"
-	TOKEN_URL             = "https://github.com/settings/tokens/new?scopes=repo,public_repo"
+	TODOS_DIRECTORY        = ".todos/"
+	HOME_DIRECTORY_CONFIG  = "my home dir"
+	TODOS_CONF_FILENAME    = "conf.json"
+	ISSUE_CACHE_FILENAME   = "issues.json"
+	CLOSED_ISSUES_FILENAME = "closed.txt"
+	TOKEN_URL              = "https://github.com/settings/tokens/new?scopes=repo,public_repo"
 )
 
 type Configuration struct {
@@ -81,7 +83,7 @@ func OpenConfiguration(dir string) *ConfFile {
 	logOnError(err)
 
 	//Search for conf file inside directory
-	f, err := os.OpenFile(path.Join(dir, TODOS_CONF), os.O_RDWR|os.O_CREATE, 0660)
+	f, err := os.OpenFile(path.Join(dir, TODOS_CONF_FILENAME), os.O_RDWR|os.O_CREATE, 0660)
 	logOnError(err)
 
 	conf := Configuration{}
@@ -102,7 +104,7 @@ func (conf *ConfFile) WriteConfiguration() error {
 
 func IssueCacheFilePath(dir string) string {
 
-	return path.Join(dir, TODOS_DIRECTORY, ISSUE_CACHE)
+	return path.Join(dir, TODOS_DIRECTORY, ISSUE_CACHE_FILENAME)
 }
 func LoadIssueCache(dir string) *IssueCacheFile {
 

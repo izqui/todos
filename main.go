@@ -22,10 +22,6 @@ var (
 	resetArg = flag.Bool("reset", false, "Reset Github token")
 )
 
-const (
-	TODOS_DIRECTORY = ".todos/"
-)
-
 func init() {
 
 	flag.Parse()
@@ -111,7 +107,8 @@ func setup(root string) {
 	logOnError(local.WriteConfiguration())
 	logOnError(GitAdd(path.Join(root, TODOS_DIRECTORY)))
 
-	SetupGitHook(root + "/.git/hooks/pre-commit")
+	SetupGitPrecommitHook(root)
+	SetupGitCommitMsgHook(root)
 }
 
 func work(root string, files []string) {
@@ -150,6 +147,9 @@ func work(root string, files []string) {
 
 		cacheFile := LoadIssueCache(root)
 		cacheChanges := false
+
+		//Leave first two lines blank so it displays as the commit description
+		closedIssues := []string{"", ""}
 
 		for _, file := range files {
 
@@ -248,7 +248,9 @@ func work(root string, files []string) {
 				select {
 				case is := <-closeCb:
 					closeCount--
-					fmt.Println("[Todos] Closed issue #", is.IssueNumber) //TODO: Append "Closed todo #x" to commit msg [Issue: https://github.com/izqui/todos/issues/42]
+					issueClosing := fmt.Sprintf("[Todos] Closed issue #%i", is.IssueNumber)
+					fmt.Println(issueClosing)
+					closedIssues = append(closedIssues, issueClosing)
 					cacheFile.RemoveIssue(is)
 					cacheChanges = true
 
@@ -269,6 +271,12 @@ func work(root string, files []string) {
 			logOnError(cacheFile.WriteIssueCache())
 			GitAdd(IssueCacheFilePath(root))
 		}
+		if len(closedIssues) <= 2 {
+
+			closedIssues = []string{}
+		}
+
+		logOnError(WriteFileLines(path.Join(root, TODOS_DIRECTORY, CLOSED_ISSUES_FILENAME), closedIssues, false))
 	}
 }
 

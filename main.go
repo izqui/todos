@@ -153,7 +153,10 @@ func work(root string, files []string) {
 
 		for _, file := range files {
 
-			fileIssuesCache := cacheFile.GetIssuesInFile(file)
+			// In the cache files are saved as a relative path to the project root
+			relativeFilePath := pathDifference(root, file)
+
+			fileIssuesCache := cacheFile.GetIssuesInFile(relativeFilePath)
 			fileIssuesCacheCopy := fileIssuesCache
 
 			removed := 0
@@ -192,7 +195,6 @@ func work(root string, files []string) {
 
 						branch, _ := GitBranch()
 
-						relativeFilePath := pathDifference(root, file)
 						filename := path.Base(file)
 
 						body := fmt.Sprintf(ISSUE_BODY, filename, fmt.Sprintf(GITHUB_FILE_URL, owner, repo, branch, relativeFilePath))
@@ -200,7 +202,7 @@ func work(root string, files []string) {
 						logOnError(err)
 
 						if issue != nil {
-							cb <- Issue{IssueURL: *issue.HTMLURL, IssueNumber: *issue.Number, Line: line, File: file}
+							cb <- Issue{IssueURL: *issue.HTMLURL, IssueNumber: *issue.Number, Line: line, File: relativeFilePath}
 						}
 					}(i, cb)
 				}
@@ -284,6 +286,7 @@ func pathDifference(p1, p2 string) string {
 
 	return path.Join(strings.Split(p2, "/")[len(strings.Split(p1, "/")):]...)
 }
+
 func timeout(i time.Duration) chan bool {
 
 	t := make(chan bool)

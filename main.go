@@ -161,7 +161,7 @@ func work(root string, files []string) {
 
 			removed := 0
 
-			fmt.Println("[Todos] Checking file: ", file)
+			fmt.Println("[Todos] Checking file:", relativeFilePath)
 
 			lines, err := ReadFileLines(file)
 			logOnError(err)

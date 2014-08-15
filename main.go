@@ -248,7 +248,7 @@ func work(root string, files []string) {
 				select {
 				case is := <-closeCb:
 					closeCount--
-					issueClosing := fmt.Sprintf("[Todos] Closed issue #%i", is.IssueNumber)
+					issueClosing := fmt.Sprintf("[Todos] Closed issue #%d", is.IssueNumber)
 					fmt.Println(issueClosing)
 					closedIssues = append(closedIssues, issueClosing)
 					cacheFile.RemoveIssue(is)

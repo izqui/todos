@@ -20,16 +20,17 @@ Make sure you have `$GOPATH/bin` in your `$PATH`
 
 ### How does it work?
 
-Todos installs a git precommit hook in your local Git repository, so whenever you are about to commit todos will look for "TODO" tags in comments an submit a Github issue. The issue url is referenced in the code, so you can jump directly there when browsing your code.
+Todos installs a git `precommit hook` in your local Git repository, so whenever you are about to commit todos will look for "TODO" tags in comments an submit a Github issue. The issue url is referenced in the code, so you can jump directly there when browsing your code.
 
-In the same way, when you delete the TODO from your code, todos will mark the issue as closed in Github.
+In the same way, when you delete the TODO from your code, todos will mark the issue as closed in Github and add a message in your commit description, so you know this was the commit that fixed the issue.
 
 * `todos setup`: 
 	* Checks if current directory is a git repository
 	* Checks ~/.todos/conf for conf file with github token
 	* Asks for github token if it doesn't exist
 	* Asks for github owner/repo to know where to post issues
-	* Adds precommit hook and makes it executable
+	* Adds `precommit hook` and makes it executable
+	* Adds `commit-msg hook` and makes it executable 
 
 * `todos work`: 
 	* Checks if current directory is a git repository
@@ -38,3 +39,4 @@ In the same way, when you delete the TODO from your code, todos will mark the is
 	* Posts issue to github
 	* Saves a local cache in `.todos/issues.json` of the issues it adds.
 	* Checks the cache for missing todos and closes issue.
+	* Saves a file in `.todos/closed.txt` that the `commit-msg hook` will append to the git message commit file. 

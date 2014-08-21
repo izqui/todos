@@ -10,7 +10,6 @@ Get the TODO's in your code directly into Github Issues. Uses pre-commit Git hoo
 At the moment of writing, you need to have Go installed. //TODO: Create distribution binaries [Issue: https://github.com/izqui/todos/issues/41]
 ```.sh 
 go get github.com/izqui/todos
-go install github.com/izqui/todos
 ```
 ### How to use it?
 

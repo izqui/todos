@@ -1,6 +1,5 @@
 todos
 
-# Created by http://www.gitignore.io
 
 ### Go ###
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
@@ -28,3 +27,4 @@ _testmain.go
 *.test
 *.prof
 
+.DS_Store

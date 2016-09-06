@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
 	"github.com/skratchdot/open-golang/open"
+	"golang.org/x/oauth2"
 
 	"github.com/izqui/functional"
 	"github.com/izqui/helpers"
@@ -128,17 +128,18 @@ func work(root string, files []string) {
 		fmt.Println("[Todos] You need to setup the repo running 'todos setup'")
 
 	} else {
-
-		o := &oauth.Transport{
-			Token: &oauth.Token{AccessToken: global.Config.GithubToken},
-		}
+		
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: global.Config.GithubToken},
+		)
+		tc := oauth2.NewClient(oauth2.NoContext, ts)
 
 		owner := local.Config.Owner
 		repo := local.Config.Repo
 
 		fmt.Printf("[Todos] Scanning changed files on %s/%s\n", owner, repo)
 
-		client := github.NewClient(o.Client())
+		client := github.NewClient(tc)
 
 		existingRegex, err := regexp.Compile(ISSUE_URL_REGEX)
 		logOnError(err)

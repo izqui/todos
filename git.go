@@ -96,7 +96,7 @@ func SetupGitPrecommitHook(dir string) {
 func SetupGitCommitMsgHook(dir string) {
 
 	closedFile := path.Join(dir, TODOS_DIRECTORY, CLOSED_ISSUES_FILENAME)
-	script := fmt.Sprintf("cat %s >> \"$1\"; rm %s", closedFile, closedFile)
+	script := fmt.Sprintf("cat %s >> \"$1\"; rm -f %s", closedFile, closedFile)
 
 	SetupHook(path.Join(dir, ".git/hooks/commit-msg"), script)
 }

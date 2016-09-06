@@ -22,7 +22,7 @@ func GitDirectoryRoot() (string, error) {
 
 func GitDiffFiles() ([]string, error) {
 
-	cmd := exec.Command("git", "diff", "--name-only")
+	cmd := exec.Command("git", "diff", "--name-only", "origin/master..HEAD")
 	res, err := cmd.Output()
 
 	if err != nil {
@@ -90,7 +90,7 @@ func SetupHook(path string, script string) {
 
 func SetupGitPrecommitHook(dir string) {
 
-	SetupHook(path.Join(dir, ".git/hooks/pre-commit"), "git diff --cached --name-only | todos work")
+	SetupHook(path.Join(dir, ".git/hooks/pre-push"), "git diff --name-only origin/master..HEAD | todos work")
 }
 
 func SetupGitCommitMsgHook(dir string) {

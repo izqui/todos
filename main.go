@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -199,7 +200,7 @@ func work(root string, files []string) {
 						filename := path.Base(file)
 
 						body := fmt.Sprintf(ISSUE_BODY, filename, fmt.Sprintf(GITHUB_FILE_URL, owner, repo, branch, relativeFilePath))
-						issue, _, err := client.Issues.Create(owner, repo, &github.IssueRequest{Title: &todo, Body: &body})
+						issue, _, err := client.Issues.Create(context.TODO(), owner, repo, &github.IssueRequest{Title: &todo, Body: &body})
 						logOnError(err)
 
 						if issue != nil {
@@ -239,7 +240,7 @@ func work(root string, files []string) {
 					go func(i Issue) {
 
 						var closed string = "closed"
-						_, _, err := client.Issues.Edit(owner, repo, is.IssueNumber, &github.IssueRequest{State: &closed})
+						_, _, err := client.Issues.Edit(context.TODO(), owner, repo, is.IssueNumber, &github.IssueRequest{State: &closed})
 						logOnError(err)
 						closeCb <- i
 					}(*is)
